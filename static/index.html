@@ -17,19 +17,15 @@
           <div class="title">Dr. Hausarzt</div>
           <div class="subtitle">Europäische Hausarztpraxis</div>
         </div>
+        <button id="langToggle" class="lang-toggle" onclick="switchLanguage()" title="Auf Russisch wechseln">
+          RU
+        </button>
       </header>
 
       <main class="chat">
         <div class="welcome-message">
           <div class="bubble bot">
-            <strong>Willkommen in der Praxis von Dr. Hausarzt!</strong><br><br>
-            Ich bin Ihr digitaler Hausarzt und arbeite mit einem Team von 5 Spezialisten zusammen:<br>
-            • Triage-Spezialist für Dringlichkeitsbewertung<br>
-            • Klinischer Diagnostiker für Symptomanalyse<br>
-            • Differential-Diagnostiker für mögliche Diagnosen<br>
-            • Untersuchungs-Spezialist für Testempfehlungen<br>
-            • Behandlungs-Spezialist für Therapieempfehlungen<br><br>
-            Beschreiben Sie bitte Ihre Symptome oder Beschwerden...
+            <!-- Welcome message will be populated by JavaScript based on language -->
           </div>
         </div>
 
@@ -53,13 +49,6 @@
           </button>
         </form>
       </main>
-
-      <footer class="disclaimer">
-        <small>
-          ⚠️ <strong>Wichtiger Hinweis:</strong> Diese Anwendung dient nur zu Informationszwecken und ersetzt nicht den Besuch bei einem Arzt.
-          Bei ernsten Beschwerden wenden Sie sich sofort an einen Arzt oder den Notdienst.
-        </small>
-      </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>

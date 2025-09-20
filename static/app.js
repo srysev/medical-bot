@@ -5,6 +5,111 @@ const $input = document.getElementById("input");
 const $send = document.getElementById("send");
 const $typing = document.getElementById("typing");
 
+// Translation system
+const translations = {
+    de: {
+        title: "Medizinische Beratung - Dr. Hausarzt",
+        headerTitle: "Dr. Hausarzt",
+        headerSubtitle: "Europäische Hausarztpraxis",
+        welcomeMessage: `<strong>Willkommen in der Praxis von Dr. Hausarzt!</strong><br><br>
+            Ich bin Ihr digitaler Hausarzt und arbeite mit einem Team von 5 Spezialisten zusammen:<br>
+            • Triage-Spezialist für Dringlichkeitsbewertung<br>
+            • Klinischer Diagnostiker für Symptomanalyse<br>
+            • Differential-Diagnostiker für mögliche Diagnosen<br>
+            • Untersuchungs-Spezialist für Testempfehlungen<br>
+            • Behandlungs-Spezialist für Therapieempfehlungen<br><br>
+            <strong>⚠️ Wichtiger Hinweis:</strong> Diese Anwendung dient nur zu Informationszwecken und ersetzt nicht den Besuch bei einem Arzt. Bei ernsten Beschwerden wenden Sie sich sofort an einen Arzt oder den Notdienst.<br><br>
+            Beschreiben Sie bitte Ihre Symptome oder Beschwerden...`,
+        inputPlaceholder: "Beschreiben Sie Ihre Symptome oder Beschwerden...",
+        sendLabel: "Senden",
+        errorMessage: "⚠️ Verbindung zum medizinischen Team fehlgeschlagen. Bitte versuchen Sie es erneut oder wenden Sie sich bei dringenden Fällen an einen Arzt.",
+        consoleMessage: "Medizinische Beratung gesendet mit session_id"
+    },
+    ru: {
+        title: "Медицинская консультация - Доктор Хаузарцт",
+        headerTitle: "Доктор Хаузарцт",
+        headerSubtitle: "Европейская семейная практика",
+        welcomeMessage: `<strong>Добро пожаловать в кабинет доктора Хаузарцт!</strong><br><br>
+            Я ваш цифровой семейный врач и работаю с командой из 5 специалистов:<br>
+            • Специалист по триажу для оценки срочности<br>
+            • Клинический диагност для анализа симптомов<br>
+            • Дифференциальный диагност для возможных диагнозов<br>
+            • Специалист по обследованиям для рекомендаций тестов<br>
+            • Специалист по лечению для терапевтических рекомендаций<br><br>
+            <strong>⚠️ Важное замечание:</strong> Это приложение предназначено только для информационных целей и не заменяет визит к врачу. При серьезных жалобах немедленно обратитесь к врачу или в службу экстренной помощи.<br><br>
+            Пожалуйста, опишите ваши симптомы или жалобы...`,
+        inputPlaceholder: "Опишите ваши симптомы или жалобы...",
+        sendLabel: "Отправить",
+        errorMessage: "⚠️ Соединение с медицинской командой не удалось. Повторите попытку или обратитесь к врачу в срочных случаях.",
+        consoleMessage: "Медицинская консультация отправлена с session_id"
+    }
+};
+
+let currentLang = 'de';
+
+// Language detection and initialization
+function detectLanguage() {
+    // Check URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlLang = urlParams.get('lang');
+    if (urlLang && translations[urlLang]) {
+        return urlLang;
+    }
+
+    // Check localStorage
+    const savedLang = localStorage.getItem('medical_app_language');
+    if (savedLang && translations[savedLang]) {
+        return savedLang;
+    }
+
+    // Check browser language
+    const browserLang = navigator.language.substr(0, 2);
+    if (translations[browserLang]) {
+        return browserLang;
+    }
+
+    // Default to German
+    return 'de';
+}
+
+function updateLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('medical_app_language', lang);
+
+    // Update document title
+    document.title = translations[lang].title;
+
+    // Update header
+    document.querySelector('.title').textContent = translations[lang].headerTitle;
+    document.querySelector('.subtitle').textContent = translations[lang].headerSubtitle;
+
+    // Update welcome message
+    document.querySelector('.welcome-message .bubble').innerHTML = translations[lang].welcomeMessage;
+
+    // Update input placeholder
+    $input.placeholder = translations[lang].inputPlaceholder;
+
+    // Update send button aria-label
+    $send.setAttribute('aria-label', translations[lang].sendLabel);
+
+    // Update language toggle button text
+    const $langToggle = document.getElementById('langToggle');
+    if ($langToggle) {
+        $langToggle.textContent = lang === 'de' ? 'RU' : 'DE';
+        $langToggle.title = lang === 'de' ? 'Переключить на русский' : 'Auf Deutsch wechseln';
+    }
+
+    // Update URL without reload
+    const url = new URL(window.location);
+    url.searchParams.set('lang', lang);
+    window.history.replaceState({}, '', url);
+}
+
+function switchLanguage() {
+    const newLang = currentLang === 'de' ? 'ru' : 'de';
+    updateLanguage(newLang);
+}
+
 function uuid() {
     if (crypto && crypto.randomUUID) return crypto.randomUUID();
     return "xxxxxx".replace(/x/g, () => ((Math.random() * 36) | 0).toString(36));
@@ -71,7 +176,7 @@ $form.addEventListener("submit", async (e) => {
 
     try {
         // Log session usage for medical consultation
-        console.log(`Sending medical consultation with session_id: ${sessionId}`);
+        console.log(`${translations[currentLang].consoleMessage}: ${sessionId}`);
 
         // Use the known agent ID for Dr. Hausarzt
         const agentId = "dr.-hausarzt";
@@ -97,15 +202,19 @@ $form.addEventListener("submit", async (e) => {
 
     } catch (err) {
         console.error("Medical consultation error:", err);
-        bubble("⚠️ Verbindung zum medizinischen Team fehlgeschlagen. Bitte versuchen Sie es erneut oder wenden Sie sich bei dringenden Fällen an einen Arzt.", "bot");
+        bubble(translations[currentLang].errorMessage, "bot");
     } finally {
         setLoading(false);
         $input.focus();
     }
 });
 
-// Focus input on page load
+// Initialize language and focus input on page load
 document.addEventListener("DOMContentLoaded", () => {
+    // Initialize language
+    const detectedLang = detectLanguage();
+    updateLanguage(detectedLang);
+
     $input.focus();
 });
 
