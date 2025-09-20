@@ -29,7 +29,23 @@ const translations = {
         usernamePlaceholder: "Ihr Name",
         usernameConfirm: "Bestätigen",
         usernameCancel: "Abbrechen",
-        treatingLabel: "Behandelt:"
+        treatingLabel: "Behandelt:",
+        historyTitle: "Gesprächsverlauf",
+        historyEmpty: "Noch keine Gespräche gespeichert",
+        exportMarkdown: "Als Markdown exportieren",
+        exportText: "Als Text exportieren",
+        closeHistory: "Schließen",
+        historyButton: "Frühere Konversationen",
+        historyButtonShort: "Verlauf",
+        viewButton: "Anzeigen",
+        messagesCount: "Nachrichten",
+        conversationFrom: "Gespräch vom",
+        userLabel: "Benutzer:",
+        youLabel: "Sie",
+        doctorLabel: "Dr. Hausarzt",
+        backButton: "← Zurück",
+        noMessages: "Keine Nachrichten",
+        atTime: "um"
     },
     ru: {
         title: "Медицинская консультация - Доктор Хаусарцт",
@@ -53,12 +69,149 @@ const translations = {
         usernamePlaceholder: "Ваше имя",
         usernameConfirm: "Подтвердить",
         usernameCancel: "Отмена",
-        treatingLabel: "Лечит:"
+        treatingLabel: "Лечит:",
+        historyTitle: "История разговоров",
+        historyEmpty: "Пока нет сохраненных разговоров",
+        exportMarkdown: "Экспорт в Markdown",
+        exportText: "Экспорт в текст",
+        closeHistory: "Закрыть",
+        historyButton: "История",
+        historyButtonShort: "История",
+        viewButton: "Посмотреть",
+        messagesCount: "сообщений",
+        conversationFrom: "Разговор от",
+        userLabel: "Пользователь:",
+        youLabel: "Вы",
+        doctorLabel: "Доктор Хаусарцт",
+        backButton: "← Назад",
+        noMessages: "Нет сообщений",
+        atTime: "в"
     }
 };
 
 let currentLang = 'de';
 let currentUserName = null;
+
+// Conversation storage manager
+class ConversationManager {
+    constructor() {
+        this.storageKey = 'medical_conversations';
+        this.maxConversations = 50;
+    }
+
+    getCurrentConversation() {
+        const conversations = this.getAllConversations();
+        if (!conversations[sessionId]) {
+            conversations[sessionId] = {
+                messages: [],
+                startTime: new Date().toISOString(),
+                userName: currentUserName || 'anonymous'
+            };
+            this.saveConversations(conversations);
+        }
+        return conversations[sessionId];
+    }
+
+    addMessage(type, text) {
+        const conversations = this.getAllConversations();
+        const conversation = this.getCurrentConversation();
+
+        const message = {
+            type: type, // 'user' or 'bot'
+            text: text,
+            timestamp: new Date().toISOString()
+        };
+
+        conversation.messages.push(message);
+        conversations[sessionId] = conversation;
+
+        this.saveConversations(conversations);
+        this.cleanupOldConversations();
+    }
+
+    getAllConversations() {
+        try {
+            const stored = localStorage.getItem(this.storageKey);
+            return stored ? JSON.parse(stored) : {};
+        } catch (e) {
+            console.error('Error reading conversations from localStorage:', e);
+            return {};
+        }
+    }
+
+    saveConversations(conversations) {
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(conversations));
+        } catch (e) {
+            console.error('Error saving conversations to localStorage:', e);
+        }
+    }
+
+    cleanupOldConversations() {
+        const conversations = this.getAllConversations();
+        const conversationIds = Object.keys(conversations);
+
+        if (conversationIds.length > this.maxConversations) {
+            // Sort by start time and keep only the most recent
+            const sorted = conversationIds.sort((a, b) => {
+                const timeA = conversations[a].startTime;
+                const timeB = conversations[b].startTime;
+                return new Date(timeB) - new Date(timeA);
+            });
+
+            // Keep only the latest maxConversations
+            const toKeep = sorted.slice(0, this.maxConversations);
+            const cleaned = {};
+
+            toKeep.forEach(id => {
+                cleaned[id] = conversations[id];
+            });
+
+            this.saveConversations(cleaned);
+        }
+    }
+
+    exportConversation(conversationId, format = 'markdown') {
+        const conversations = this.getAllConversations();
+        const conversation = conversations[conversationId];
+
+        if (!conversation) return null;
+
+        const date = new Date(conversation.startTime).toLocaleString();
+        let content = '';
+
+        const headerTitle = currentLang === 'de' ? 'Medizinische Beratung' : 'Медицинская консультация';
+        const dateLabel = currentLang === 'de' ? 'Datum:' : 'Дата:';
+        const userLabel = currentLang === 'de' ? 'Benutzer:' : 'Пользователь:';
+
+        if (format === 'markdown') {
+            content = `# ${headerTitle}\n\n`;
+            content += `**${dateLabel}** ${date}\n`;
+            content += `**${userLabel}** ${conversation.userName}\n\n`;
+
+            conversation.messages.forEach(msg => {
+                const time = new Date(msg.timestamp).toLocaleTimeString();
+                const sender = msg.type === 'user' ? translations[currentLang].youLabel : translations[currentLang].doctorLabel;
+                content += `**[${time}] ${sender}:** ${msg.text}\n\n`;
+            });
+        } else {
+            // Plain text format
+            content = `${headerTitle}\n\n`;
+            content += `${dateLabel} ${date}\n`;
+            content += `${userLabel} ${conversation.userName}\n\n`;
+
+            conversation.messages.forEach(msg => {
+                const time = new Date(msg.timestamp).toLocaleTimeString();
+                const sender = msg.type === 'user' ? translations[currentLang].youLabel : translations[currentLang].doctorLabel;
+                content += `[${time}] ${sender}: ${msg.text}\n\n`;
+            });
+        }
+
+        return content;
+    }
+}
+
+const conversationManager = new ConversationManager();
 
 // Language detection and initialization
 function detectLanguage() {
@@ -110,6 +263,16 @@ function updateLanguage(lang) {
     if ($langToggle) {
         $langToggle.textContent = lang === 'de' ? 'RU' : 'DE';
         $langToggle.title = lang === 'de' ? 'Переключить на русский' : 'Auf Deutsch wechseln';
+    }
+
+    // Update history button text
+    const $historyToggle = document.getElementById('historyToggle');
+    const $historyTextFull = document.querySelector('.history-text-full');
+    const $historyTextShort = document.querySelector('.history-text-short');
+    if ($historyToggle && $historyTextFull && $historyTextShort) {
+        $historyTextFull.textContent = translations[lang].historyButton;
+        $historyTextShort.textContent = translations[lang].historyButtonShort;
+        $historyToggle.title = translations[lang].historyTitle;
     }
 
     // Update username display
@@ -231,6 +394,155 @@ function updatePersonalizedWelcome() {
     }
 }
 
+// Conversation history functions
+function showConversationHistory() {
+    const modal = document.getElementById('historyModal');
+    const historyList = document.getElementById('historyList');
+    const historyTitle = document.getElementById('historyTitle');
+    const closeBtn = document.getElementById('closeHistoryBtn');
+
+    // Update modal text based on current language
+    historyTitle.textContent = translations[currentLang].historyTitle;
+    closeBtn.textContent = translations[currentLang].closeHistory;
+
+    // Populate conversation list
+    populateConversationHistory();
+
+    modal.style.display = 'flex';
+}
+
+function hideConversationHistory() {
+    const modal = document.getElementById('historyModal');
+    modal.style.display = 'none';
+}
+
+function populateConversationHistory() {
+    const historyList = document.getElementById('historyList');
+    const conversations = conversationManager.getAllConversations();
+    const conversationIds = Object.keys(conversations);
+
+    if (conversationIds.length === 0) {
+        historyList.innerHTML = `<div class="history-empty">${translations[currentLang].historyEmpty}</div>`;
+        return;
+    }
+
+    // Sort conversations by start time (newest first)
+    const sorted = conversationIds.sort((a, b) => {
+        const timeA = conversations[a].startTime;
+        const timeB = conversations[b].startTime;
+        return new Date(timeB) - new Date(timeA);
+    });
+
+    let html = '';
+
+    sorted.forEach(conversationId => {
+        const conversation = conversations[conversationId];
+        const startDate = new Date(conversation.startTime);
+        const dateStr = startDate.toLocaleDateString();
+        const timeStr = startDate.toLocaleTimeString();
+        const messageCount = conversation.messages.length;
+
+        // Get first user message as preview
+        const firstUserMessage = conversation.messages.find(msg => msg.type === 'user');
+        const preview = firstUserMessage ?
+            (firstUserMessage.text.length > 60 ?
+                firstUserMessage.text.substring(0, 60) + '...' :
+                firstUserMessage.text) :
+            translations[currentLang].noMessages;
+
+        html += `
+            <div class="history-item" data-conversation-id="${conversationId}">
+                <div class="history-item-header">
+                    <span class="history-date">${dateStr} ${timeStr}</span>
+                    <span class="history-count">${messageCount} ${translations[currentLang].messagesCount}</span>
+                </div>
+                <div class="history-preview">${preview}</div>
+                <div class="history-actions">
+                    <button onclick="viewConversation('${conversationId}')" class="history-btn">${translations[currentLang].viewButton}</button>
+                    <button onclick="exportConversation('${conversationId}', 'markdown')" class="history-btn">${translations[currentLang].exportMarkdown}</button>
+                    <button onclick="exportConversation('${conversationId}', 'text')" class="history-btn">${translations[currentLang].exportText}</button>
+                </div>
+            </div>
+        `;
+    });
+
+    historyList.innerHTML = html;
+}
+
+function viewConversation(conversationId) {
+    const conversations = conversationManager.getAllConversations();
+    const conversation = conversations[conversationId];
+
+    if (!conversation) return;
+
+    const historyList = document.getElementById('historyList');
+    const startDate = new Date(conversation.startTime);
+    const dateStr = startDate.toLocaleDateString();
+    const timeStr = startDate.toLocaleTimeString();
+
+    let html = `
+        <div class="conversation-viewer">
+            <div class="conversation-header">
+                <button onclick="populateConversationHistory()" class="back-btn">${translations[currentLang].backButton}</button>
+                <div class="conversation-info">
+                    <h4>${translations[currentLang].conversationFrom} ${dateStr} ${translations[currentLang].atTime} ${timeStr}</h4>
+                    <span>${translations[currentLang].userLabel} ${conversation.userName}</span>
+                </div>
+            </div>
+            <div class="conversation-messages">
+    `;
+
+    conversation.messages.forEach(message => {
+        const msgTime = new Date(message.timestamp).toLocaleTimeString();
+        const className = message.type === 'user' ? 'user-message' : 'bot-message';
+        const sender = message.type === 'user' ? translations[currentLang].youLabel : translations[currentLang].doctorLabel;
+
+        html += `
+            <div class="${className}">
+                <div class="message-header">
+                    <span class="message-sender">${sender}</span>
+                    <span class="message-time">${msgTime}</span>
+                </div>
+                <div class="message-content">${message.text}</div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+        </div>
+    `;
+
+    historyList.innerHTML = html;
+}
+
+function exportConversationToFile(conversationId, format) {
+    const content = conversationManager.exportConversation(conversationId, format);
+    if (!content) return;
+
+    const conversations = conversationManager.getAllConversations();
+    const conversation = conversations[conversationId];
+    const startDate = new Date(conversation.startTime);
+    const dateStr = startDate.toISOString().split('T')[0];
+
+    const filename = `medical-consultation-${dateStr}-${conversationId.split(':')[2]}.${format === 'markdown' ? 'md' : 'txt'}`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Export function wrapper for buttons
+function exportConversation(conversationId, format) {
+    exportConversationToFile(conversationId, format);
+}
+
 function uuid() {
     if (crypto && crypto.randomUUID) return crypto.randomUUID();
     return "xxxxxx".replace(/x/g, () => ((Math.random() * 36) | 0).toString(36));
@@ -246,10 +558,9 @@ function getUserSessionId() {
 }
 
 function getSessionId() {
-    const userSessionId = getUserSessionId();
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD format
     const userName = currentUserName || 'anonymous';
-    return `web:${userName}:${userSessionId}:${today}`;
+    const timestamp = Date.now(); // Unique per page refresh
+    return `web:${userName}:${timestamp}`;
 }
 
 let sessionId = getSessionId();
@@ -274,6 +585,10 @@ function bubble(text, who = "bot", { markdown = false } = {}) {
 
     $messages.appendChild(div);
     scrollToBottom();
+
+    // Save message to conversation history
+    conversationManager.addMessage(who, text);
+
     return div;
 }
 

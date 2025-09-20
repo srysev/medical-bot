@@ -23,9 +23,15 @@
             </div>
           </div>
         </div>
-        <button id="langToggle" class="lang-toggle" onclick="switchLanguage()" title="Auf Russisch wechseln">
-          RU
-        </button>
+        <div class="header-buttons">
+          <button id="historyToggle" class="history-toggle" onclick="showConversationHistory()" title="Gesprächsverlauf anzeigen">
+            <span class="history-text-full">Frühere Konversationen</span>
+            <span class="history-text-short">Verlauf</span>
+          </button>
+          <button id="langToggle" class="lang-toggle" onclick="switchLanguage()" title="Auf Russisch wechseln">
+            RU
+          </button>
+        </div>
       </header>
 
       <main class="chat">
@@ -65,6 +71,22 @@
         <div class="username-modal-buttons">
           <button id="usernameConfirm" onclick="confirmUsername()" class="username-btn username-btn-primary">Bestätigen</button>
           <button id="usernameCancel" onclick="hideUsernameModal()" class="username-btn username-btn-secondary">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conversation History Modal -->
+    <div id="historyModal" class="history-modal" style="display: none;">
+      <div class="history-modal-content">
+        <div class="history-header">
+          <h3 id="historyTitle">Gesprächsverlauf</h3>
+          <button onclick="hideConversationHistory()" class="history-close">×</button>
+        </div>
+        <div id="historyList" class="history-list">
+          <!-- Conversation list will be populated by JavaScript -->
+        </div>
+        <div class="history-footer">
+          <button id="closeHistoryBtn" onclick="hideConversationHistory()" class="username-btn username-btn-secondary">Schließen</button>
         </div>
       </div>
     </div>
