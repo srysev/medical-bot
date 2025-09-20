@@ -23,7 +23,13 @@ const translations = {
         inputPlaceholder: "Beschreiben Sie Ihre Symptome oder Beschwerden...",
         sendLabel: "Senden",
         errorMessage: "⚠️ Verbindung zum medizinischen Team fehlgeschlagen. Bitte versuchen Sie es erneut oder wenden Sie sich bei dringenden Fällen an einen Arzt.",
-        consoleMessage: "Medizinische Beratung gesendet mit session_id"
+        consoleMessage: "Medizinische Beratung gesendet mit session_id",
+        usernamePrompt: "Willkommen! Wie sollen wir Sie nennen?",
+        usernameEditLabel: "ändern",
+        usernamePlaceholder: "Ihr Name",
+        usernameConfirm: "Bestätigen",
+        usernameCancel: "Abbrechen",
+        treatingLabel: "Behandelt:"
     },
     ru: {
         title: "Медицинская консультация - Доктор Хаусарцт",
@@ -41,11 +47,18 @@ const translations = {
         inputPlaceholder: "Опишите ваши симптомы или жалобы...",
         sendLabel: "Отправить",
         errorMessage: "⚠️ Соединение с медицинской командой не удалось. Повторите попытку или обратитесь к врачу в срочных случаях.",
-        consoleMessage: "Медицинская консультация отправлена с session_id"
+        consoleMessage: "Медицинская консультация отправлена с session_id",
+        usernamePrompt: "Добро пожаловать! Как нам вас называть?",
+        usernameEditLabel: "изменить",
+        usernamePlaceholder: "Ваше имя",
+        usernameConfirm: "Подтвердить",
+        usernameCancel: "Отмена",
+        treatingLabel: "Лечит:"
     }
 };
 
 let currentLang = 'de';
+let currentUserName = null;
 
 // Language detection and initialization
 function detectLanguage() {
@@ -99,6 +112,9 @@ function updateLanguage(lang) {
         $langToggle.title = lang === 'de' ? 'Переключить на русский' : 'Auf Deutsch wechseln';
     }
 
+    // Update username display
+    updateUsernameDisplay();
+
     // Update URL without reload
     const url = new URL(window.location);
     url.searchParams.set('lang', lang);
@@ -108,6 +124,111 @@ function updateLanguage(lang) {
 function switchLanguage() {
     const newLang = currentLang === 'de' ? 'ru' : 'de';
     updateLanguage(newLang);
+}
+
+// Username management functions
+function getUserName() {
+    const savedName = localStorage.getItem('medical_user_name');
+    return savedName ? savedName.trim() : null;
+}
+
+function setUserName(name) {
+    if (name && name.trim()) {
+        const trimmedName = name.trim();
+        localStorage.setItem('medical_user_name', trimmedName);
+        currentUserName = trimmedName;
+        updateUsernameDisplay();
+        updatePersonalizedWelcome();
+        // Update session ID to include username
+        sessionId = getSessionId();
+        return true;
+    }
+    return false;
+}
+
+function promptForUsername() {
+    const modal = document.getElementById('usernameModal');
+    const input = document.getElementById('usernameInput');
+    const promptText = document.getElementById('usernamePromptText');
+    const confirmBtn = document.getElementById('usernameConfirm');
+    const cancelBtn = document.getElementById('usernameCancel');
+
+    if (!modal) return;
+
+    // Update modal text based on current language
+    promptText.textContent = translations[currentLang].usernamePrompt;
+    input.placeholder = translations[currentLang].usernamePlaceholder;
+    confirmBtn.textContent = translations[currentLang].usernameConfirm;
+    cancelBtn.textContent = translations[currentLang].usernameCancel;
+
+    modal.style.display = 'flex';
+    input.focus();
+}
+
+function hideUsernameModal() {
+    const modal = document.getElementById('usernameModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function confirmUsername() {
+    const input = document.getElementById('usernameInput');
+    const name = input.value.trim();
+
+    if (name) {
+        setUserName(name);
+        hideUsernameModal();
+        input.value = '';
+    } else {
+        input.focus();
+    }
+}
+
+function editUsername() {
+    const newName = prompt(
+        translations[currentLang].usernamePrompt,
+        currentUserName || ''
+    );
+
+    if (newName !== null) {
+        if (setUserName(newName)) {
+            // Success - name updated
+        } else if (newName.trim() === '') {
+            // User entered empty name, ask again
+            editUsername();
+        }
+    }
+}
+
+function updateUsernameDisplay() {
+    const usernameDisplay = document.getElementById('usernameDisplay');
+    const usernameText = document.getElementById('usernameText');
+    const editLink = document.getElementById('usernameEdit');
+
+    if (usernameDisplay && usernameText && editLink) {
+        if (currentUserName) {
+            usernameText.textContent = `${translations[currentLang].treatingLabel} ${currentUserName}`;
+            editLink.textContent = translations[currentLang].usernameEditLabel;
+            usernameDisplay.style.display = 'block';
+        } else {
+            usernameDisplay.style.display = 'none';
+        }
+    }
+}
+
+function updatePersonalizedWelcome() {
+    const welcomeBubble = document.querySelector('.welcome-message .bubble');
+    if (welcomeBubble && currentUserName) {
+        // Add personalized greeting to welcome message
+        let welcomeMsg = translations[currentLang].welcomeMessage;
+        const greeting = currentLang === 'de'
+            ? `<strong>Hallo ${currentUserName}!</strong><br><br>`
+            : `<strong>Здравствуйте, ${currentUserName}!</strong><br><br>`;
+
+        welcomeMsg = welcomeMsg.replace(/^<strong>[^<]+<\/strong><br><br>/, greeting);
+        welcomeBubble.innerHTML = welcomeMsg;
+    }
 }
 
 function uuid() {
@@ -127,10 +248,11 @@ function getUserSessionId() {
 function getSessionId() {
     const userSessionId = getUserSessionId();
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD format
-    return `web:${userSessionId}:${today}`;
+    const userName = currentUserName || 'anonymous';
+    return `web:${userName}:${userSessionId}:${today}`;
 }
 
-const sessionId = getSessionId();
+let sessionId = getSessionId();
 
 function scrollToBottom() {
     window.requestAnimationFrame(() => {
@@ -187,6 +309,11 @@ $form.addEventListener("submit", async (e) => {
         formData.append("session_id", sessionId);
         formData.append("stream", "false");
 
+        // Add user_id for personalization and memory functionality
+        if (currentUserName) {
+            formData.append("user_id", currentUserName);
+        }
+
         const runRes = await fetch(`/agents/${agentId}/runs`, {
             method: "POST",
             body: formData
@@ -215,6 +342,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const detectedLang = detectLanguage();
     updateLanguage(detectedLang);
 
+    // Initialize username
+    currentUserName = getUserName();
+    if (currentUserName) {
+        updateUsernameDisplay();
+        updatePersonalizedWelcome();
+    } else {
+        // Show username prompt for first-time users
+        setTimeout(() => promptForUsername(), 500);
+    }
+
     $input.focus();
 });
 
@@ -223,5 +360,16 @@ $input.addEventListener("keypress", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         $form.dispatchEvent(new Event("submit"));
+    }
+});
+
+// Handle Enter key in username modal
+document.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+        const modal = document.getElementById('usernameModal');
+        if (modal && modal.style.display !== 'none') {
+            e.preventDefault();
+            confirmUsername();
+        }
     }
 });

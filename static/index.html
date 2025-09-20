@@ -14,8 +14,14 @@
       <header class="topbar">
         <div class="brand">
           <div class="avatar medical-icon">🏥</div>
-          <div class="title">Dr. Hausarzt</div>
-          <div class="subtitle">Europäische Hausarztpraxis</div>
+          <div>
+            <div class="title">Dr. Hausarzt</div>
+            <div class="subtitle">Europäische Hausarztpraxis</div>
+            <div id="usernameDisplay" class="username-display" style="display: none;">
+              <span id="usernameText"></span>
+              <a href="#" id="usernameEdit" onclick="editUsername(); return false;" class="username-edit-link"></a>
+            </div>
+          </div>
         </div>
         <button id="langToggle" class="lang-toggle" onclick="switchLanguage()" title="Auf Russisch wechseln">
           RU
@@ -49,6 +55,18 @@
           </button>
         </form>
       </main>
+    </div>
+
+    <!-- Username Modal -->
+    <div id="usernameModal" class="username-modal" style="display: none;">
+      <div class="username-modal-content">
+        <h3 id="usernamePromptText">Willkommen! Wie sollen wir Sie nennen?</h3>
+        <input type="text" id="usernameInput" class="username-input" placeholder="Ihr Name" maxlength="50">
+        <div class="username-modal-buttons">
+          <button id="usernameConfirm" onclick="confirmUsername()" class="username-btn username-btn-primary">Bestätigen</button>
+          <button id="usernameCancel" onclick="hideUsernameModal()" class="username-btn username-btn-secondary">Abbrechen</button>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
