@@ -26,10 +26,10 @@ const translations = {
         consoleMessage: "Medizinische Beratung gesendet mit session_id"
     },
     ru: {
-        title: "Медицинская консультация - Доктор Хаузарцт",
-        headerTitle: "Доктор Хаузарцт",
-        headerSubtitle: "Европейская семейная практика",
-        welcomeMessage: `<strong>Добро пожаловать в кабинет доктора Хаузарцт!</strong><br><br>
+        title: "Медицинская консультация - Доктор Хаусарцт",
+        headerTitle: "Доктор Хаусарцт",
+        headerSubtitle: "Врач общей практики",
+        welcomeMessage: `<strong>Добро пожаловать в кабинет доктора Хаусарцт!</strong><br><br>
             Я ваш цифровой семейный врач и работаю с командой из 5 специалистов:<br>
             • Специалист по триажу для оценки срочности<br>
             • Клинический диагност для анализа симптомов<br>
