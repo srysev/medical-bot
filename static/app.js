@@ -33,29 +33,18 @@ function scrollToBottom() {
     });
 }
 
-function bubble(text, who = "bot", { html = false } = {}) {
+function bubble(text, who = "bot", { markdown = false } = {}) {
     const div = document.createElement("div");
     div.className = `bubble ${who}`;
-    if (html) {
-        // Sanitize HTML - allow only <br>, <strong>, <em>, <ul>, <li>
-        const sanitized = text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/\n/g, "<br>")
-            .replace(/&lt;br&gt;/g, "<br>")
-            .replace(/&lt;strong&gt;/g, "<strong>")
-            .replace(/&lt;\/strong&gt;/g, "</strong>")
-            .replace(/&lt;em&gt;/g, "<em>")
-            .replace(/&lt;\/em&gt;/g, "</em>")
-            .replace(/&lt;ul&gt;/g, "<ul>")
-            .replace(/&lt;\/ul&gt;/g, "</ul>")
-            .replace(/&lt;li&gt;/g, "<li>")
-            .replace(/&lt;\/li&gt;/g, "</li>");
-        div.innerHTML = sanitized;
+
+    if (markdown && who === "bot") {
+        // Use marked.js to parse markdown for bot messages
+        div.innerHTML = marked.parse(text);
     } else {
+        // Plain text for user messages or non-markdown content
         div.textContent = text;
     }
+
     $messages.appendChild(div);
     scrollToBottom();
     return div;
@@ -104,7 +93,7 @@ $form.addEventListener("submit", async (e) => {
 
         const data = await runRes.json();
         const responseText = data?.content || data?.message || data?.response || JSON.stringify(data);
-        bubble(responseText, "bot", { html: true });
+        bubble(responseText, "bot", { markdown: true });
 
     } catch (err) {
         console.error("Medical consultation error:", err);

@@ -33,13 +33,30 @@ The system uses 5 specialized medical agents:
 ## Dependencies
 
 ```
-agno - AI agent framework
+agno>=2.0.7 - AI agent framework with AgentOS
 openai - OpenAI API integration
 python-dotenv - Environment variable management
+fastapi - Web framework for AgentOS backend
+uvicorn - ASGI server
 ```
 
 ## Running the System
 
+### Web Application (Recommended)
+```bash
+python app.py
+```
+
+- **Web Interface**: http://localhost:8080
+- **API Documentation**: http://localhost:8080/docs
+- **Professional Chat UI**: Modern medical consultation interface with markdown support
+- **Features**:
+  - Real-time chat with Dr. Hausarzt
+  - Automatic specialist team consultation
+  - Markdown-formatted medical advice
+  - Session continuity across conversations
+
+### Command Line Interface (Development)
 ```bash
 python medical_agent_with_team.py
 ```
@@ -68,9 +85,37 @@ The system uses session IDs to maintain conversation context and enable multi-tu
 
 - **Agno Framework Documentation**: `~/Downloads/Agno-Framework-Anweisung.md` - Comprehensive guide for Agno framework usage, including agent creation, memory management, and SQLite/PostgreSQL database integration
 
+## Technical Architecture
+
+### Frontend (Web UI)
+- **HTML/CSS/JS**: Modern responsive medical consultation interface
+- **Markdown Rendering**: marked.js for professional formatting of medical advice
+- **Real-time Communication**: Direct API calls to AgentOS backend
+- **Session Management**: Browser-based session continuity
+
+### Backend (AgentOS 2.x)
+- **AgentOS**: Modern Agno 2.x architecture with integrated web server
+- **API Structure**: RESTful endpoints with OpenAPI documentation
+- **Agent Integration**: Direct access to Dr. Hausarzt and specialist team
+- **Data Format**: multipart/form-data for API communication
+
+### File Structure
+```
+medical-bot/
+├── app.py                          # AgentOS web application
+├── medical_agent_with_team.py      # Medical specialist team implementation
+├── static/                         # Frontend assets
+│   ├── index.html                  # Chat interface
+│   ├── app.js                      # API communication & markdown rendering
+│   └── styles.css                  # Medical-themed styling
+├── requirements.txt                # Python dependencies
+└── CLAUDE.md                       # This documentation
+```
+
 ## Development Notes
 
 - All agents use OpenAI GPT-4o model
 - System includes debug mode and response visibility options
 - Medical consultations are cached for 30 minutes (1800 seconds)
 - Tool-based system includes comprehensive error handling and user experience features
+- Web interface supports markdown formatting for professional medical advice presentation

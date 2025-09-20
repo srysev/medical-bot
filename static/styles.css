@@ -262,14 +262,66 @@ body {
     }
 }
 
-/* Lists in bot messages */
-.bubble.bot ul {
+/* Markdown elements in bot messages */
+.bubble.bot h1, .bubble.bot h2, .bubble.bot h3 {
+    margin: 0.75rem 0 0.5rem 0;
+    color: #2c5aa0;
+    font-weight: 600;
+}
+
+.bubble.bot h1 {
+    font-size: 1.25rem;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.25rem;
+}
+
+.bubble.bot h2 {
+    font-size: 1.1rem;
+}
+
+.bubble.bot h3 {
+    font-size: 1rem;
+}
+
+.bubble.bot p {
+    margin: 0.5rem 0;
+}
+
+.bubble.bot ul, .bubble.bot ol {
     margin: 0.5rem 0;
     padding-left: 1.5rem;
 }
 
 .bubble.bot li {
     margin: 0.25rem 0;
+}
+
+.bubble.bot strong {
+    color: #2c5aa0;
+    font-weight: 600;
+}
+
+.bubble.bot em {
+    font-style: italic;
+    color: #495057;
+}
+
+.bubble.bot code {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 3px;
+    padding: 0.125rem 0.25rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: #d63384;
+}
+
+.bubble.bot blockquote {
+    border-left: 3px solid #2c5aa0;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0 0.5rem 1rem;
+    background: rgba(44, 90, 160, 0.05);
+    font-style: italic;
 }
 
 /* Scrollbar styling */
