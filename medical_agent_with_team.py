@@ -12,7 +12,7 @@ shared_db = InMemoryDb()
 triage_agent = Agent(
     name="Triage Agent",
     role="Emergency Assessment and Prioritization",
-    model=OpenAIChat("gpt-4o"),
+    model=OpenAIChat("gpt-4.1"),
     instructions=[
         "You are a Triage Agent specializing in European primary care emergency assessment.",
         "Your role is to assess urgency of patient symptoms and determine priority level.",
@@ -39,7 +39,7 @@ triage_agent = Agent(
 clinical_assessment_agent = Agent(
     name="Clinical Assessment Agent",
     role="Clinical History and Symptom Analysis",
-    model=OpenAIChat("gpt-4o"),
+    model=OpenAIChat("gpt-4.1"),
     instructions=[
         "You are a Clinical Assessment Agent specializing in primary care symptom evaluation.",
         "Your role is to analyze completeness and significance of patient-reported symptoms.",
@@ -67,7 +67,7 @@ clinical_assessment_agent = Agent(
 diagnostic_agent = Agent(
     name="Diagnostic Agent",
     role="Differential Diagnosis and Clinical Reasoning",
-    model=OpenAIChat("gpt-4o"),
+    model=OpenAIChat("gpt-4.1"),
     instructions=[
         "You are a Diagnostic Agent specializing in primary care differential diagnosis.",
         "Your role is to suggest possible diagnoses based on symptoms and clinical information.",
@@ -96,7 +96,7 @@ diagnostic_agent = Agent(
 investigation_agent = Agent(
     name="Investigation Agent",
     role="Diagnostic Testing and Investigations",
-    model=OpenAIChat("gpt-4o"),
+    model=OpenAIChat("gpt-4.1"),
     instructions=[
         "You are an Investigation Agent specializing in primary care diagnostic testing.",
         "Your role is to recommend appropriate investigations based on symptoms and differential diagnosis.",
@@ -124,7 +124,7 @@ investigation_agent = Agent(
 treatment_agent = Agent(
     name="Treatment Agent",
     role="Treatment Planning and Management",
-    model=OpenAIChat("gpt-4o"),
+    model=OpenAIChat("gpt-4.1"),
     instructions=[
         "You are a Treatment Agent specializing in primary care management and therapeutics.",
         "Your role is to provide evidence-based treatment recommendations.",
@@ -156,7 +156,7 @@ treatment_agent = Agent(
 # Medical Specialist Team - v2.0 Compatible
 medical_team = Team(
     name="Medical Consultation Team",
-    model=OpenAIChat("gpt-4o"),
+    model=OpenAIChat("gpt-4.1"),
     db=shared_db,
     # v2.0 attributes instead of deprecated mode parameter
     respond_directly=False,  # Team leader processes member responses
@@ -262,7 +262,7 @@ def create_hausarzt_agent():
     return Agent(
         name="Dr. Hausarzt",
         role="European Family Doctor and Patient Interface",
-        model=OpenAIChat("gpt-4o"),
+        model=OpenAIChat("gpt-4.1"),
         db=shared_db,
         tools=[consult_medical_team],
         add_history_to_context=True,
