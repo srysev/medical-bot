@@ -597,8 +597,20 @@ function setLoading(loading) {
     $typing.classList.toggle("hidden", !loading);
 }
 
+// Auto-resize textarea function
+function autoResizeTextarea() {
+    $input.style.height = 'auto';
+    const scrollHeight = $input.scrollHeight;
+    const maxHeight = parseFloat(getComputedStyle($input).lineHeight) * 8; // 8 lines max
+    $input.style.height = Math.min(scrollHeight, maxHeight) + 'px';
+
+    // Add scrollbar if content exceeds max height
+    $input.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
+}
+
 $input.addEventListener("input", () => {
     $send.disabled = !$input.value.trim();
+    autoResizeTextarea();
 });
 
 $form.addEventListener("submit", async (e) => {
