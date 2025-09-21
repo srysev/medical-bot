@@ -1,5 +1,4 @@
 agno>=2.0.7
 openai
-python-dotenv
 fastapi
 uvicorn
