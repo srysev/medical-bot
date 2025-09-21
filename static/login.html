@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <title id="pageTitle">Medizinische Beratung - Anmelden</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <style>
+      .login-container {
+        max-width: 400px;
+        margin: 100px auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        border: 1px solid #e9ecef;
+      }
+
+      .login-title {
+        text-align: center;
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #2c5aa0;
+      }
+
+      .login-subtitle {
+        text-align: center;
+        font-size: 1rem;
+        color: #6c757d;
+        margin-bottom: 2rem;
+      }
+
+      .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .form-label {
+        font-weight: 500;
+        color: #495057;
+      }
+
+      .form-input {
+        padding: 0.75rem 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 25px;
+        background: white;
+        color: #495057;
+        font-size: 1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #2c5aa0;
+        box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.1);
+      }
+
+      .login-button {
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #2c5aa0 0%, #1e3c72 100%);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .login-button:hover:not(:disabled) {
+        background: linear-gradient(135deg, #1e3c72 0%, #2c5aa0 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+      }
+
+      .login-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 6px;
+        display: none;
+      }
+
+      .error-message.show {
+        display: block;
+      }
+
+      .medical-icon {
+        font-size: 2rem;
+        text-align: center;
+        margin-bottom: 1rem;
+      }
+
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+
+      .lang-toggle {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #dee2e6;
+        border-radius: 20px;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #2c5aa0;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .lang-toggle:hover {
+        background: white;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <button id="langToggle" class="lang-toggle" onclick="switchLanguage()" title="Auf Russisch wechseln">
+      RU
+    </button>
+
+    <div class="login-container">
+      <div class="medical-icon">🏥</div>
+      <h1 id="loginTitle" class="login-title">Dr. Hausarzt</h1>
+      <p id="loginSubtitle" class="login-subtitle">Europäische Hausarztpraxis</p>
+      <form class="login-form" id="loginForm">
+        <div class="form-group">
+          <label id="passwordLabel" class="form-label" for="password">Passwort</label>
+          <input
+            class="form-input"
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Passwort eingeben..."
+            required
+            autofocus
+          />
+        </div>
+        <button class="login-button" type="submit" id="loginButton">
+          Anmelden
+        </button>
+        <div class="error-message" id="errorMessage"></div>
+      </form>
+    </div>
+
+    <script>
+      // Translation system for login page
+      const loginTranslations = {
+        de: {
+          title: "Medizinische Beratung - Anmelden",
+          loginTitle: "Dr. Hausarzt",
+          loginSubtitle: "Europäische Hausarztpraxis",
+          passwordLabel: "Passwort",
+          passwordPlaceholder: "Passwort eingeben...",
+          loginButton: "Anmelden",
+          loginButtonLoading: "Anmelden...",
+          langToggleTitle: "Auf Russisch wechseln",
+          errorEmptyPassword: "Bitte Passwort eingeben.",
+          errorLoginFailed: "Anmeldung fehlgeschlagen.",
+          errorConnectionFailed: "Verbindung fehlgeschlagen. Bitte erneut versuchen."
+        },
+        ru: {
+          title: "Медицинская консультация - Вход",
+          loginTitle: "Доктор Хаусарцт",
+          loginSubtitle: "Врач общей практики",
+          passwordLabel: "Пароль",
+          passwordPlaceholder: "Введите пароль...",
+          loginButton: "Войти",
+          loginButtonLoading: "Вход...",
+          langToggleTitle: "Переключить на немецкий",
+          errorEmptyPassword: "Пожалуйста, введите пароль.",
+          errorLoginFailed: "Ошибка входа.",
+          errorConnectionFailed: "Ошибка соединения. Попробуйте снова."
+        }
+      };
+
+      let currentLang = localStorage.getItem('loginLanguage') || 'de';
+
+      function updateLanguage() {
+        const t = loginTranslations[currentLang];
+
+        document.getElementById('pageTitle').textContent = t.title;
+        document.getElementById('loginTitle').textContent = t.loginTitle;
+        document.getElementById('loginSubtitle').textContent = t.loginSubtitle;
+        document.getElementById('passwordLabel').textContent = t.passwordLabel;
+        document.getElementById('password').placeholder = t.passwordPlaceholder;
+        document.getElementById('loginButton').textContent = t.loginButton;
+        document.getElementById('langToggle').textContent = currentLang === 'de' ? 'RU' : 'DE';
+        document.getElementById('langToggle').title = t.langToggleTitle;
+
+        localStorage.setItem('loginLanguage', currentLang);
+      }
+
+      function switchLanguage() {
+        currentLang = currentLang === 'de' ? 'ru' : 'de';
+        updateLanguage();
+      }
+
+      const form = document.getElementById('loginForm');
+      const passwordInput = document.getElementById('password');
+      const loginButton = document.getElementById('loginButton');
+      const errorMessage = document.getElementById('errorMessage');
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.add('show');
+      }
+
+      function hideError() {
+        errorMessage.classList.remove('show');
+      }
+
+      function setLoading(loading) {
+        const t = loginTranslations[currentLang];
+        loginButton.disabled = loading;
+        loginButton.textContent = loading ? t.loginButtonLoading : t.loginButton;
+      }
+
+      // Get redirect URL from query params
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectUrl = urlParams.get('redirect') || '/';
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const password = passwordInput.value.trim();
+        const t = loginTranslations[currentLang];
+        if (!password) {
+          showError(t.errorEmptyPassword);
+          return;
+        }
+
+        hideError();
+        setLoading(true);
+
+        try {
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              password: password,
+              redirect: redirectUrl
+            }),
+          });
+
+          if (response.ok) {
+            // Login successful, redirect will happen automatically
+            window.location.href = redirectUrl;
+          } else {
+            const data = await response.json();
+            showError(data.detail || t.errorLoginFailed);
+          }
+        } catch (error) {
+          showError(t.errorConnectionFailed);
+          console.error('Login error:', error);
+        } finally {
+          setLoading(false);
+        }
+      });
+
+      // Initialize language on page load
+      updateLanguage();
+
+      // Focus password input on page load
+      passwordInput.focus();
+    </script>
+  </body>
+</html>
