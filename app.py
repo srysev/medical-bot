@@ -5,7 +5,7 @@ import secrets
 import logging
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from pydantic import BaseModel
 from agno.os import AgentOS
 from agno.os.config import AgentOSConfig, ChatConfig
@@ -181,6 +181,12 @@ async def login(request: LoginRequest):
     )
 
     return response
+
+# Favicon route to prevent 404 errors
+@app.get("/favicon.ico")
+async def favicon():
+    """Return empty response for favicon to prevent 404 errors."""
+    return Response(status_code=204)  # No Content
 
 # Remove existing root route and add our own
 from fastapi.routing import APIRoute
