@@ -112,6 +112,53 @@ medical-bot/
 └── CLAUDE.md                       # This documentation
 ```
 
+## Deployment
+
+### Docker Deployment to GCP Cloud Run
+
+```bash
+# Deploy without authentication
+./deploy.sh
+
+# Deploy with authentication
+./deploy.sh "AUTH_PASSWORD" "COOKIE_SECRET"
+```
+
+**Prerequisites:**
+- Docker installed and authenticated to GCP
+- gcloud CLI configured for project: openai-experiments-373016
+- OpenAI API key secret: kyrill_chat_app_openai-api-key
+
+**Deployment Details:**
+- **Image**: gcr.io/openai-experiments-373016/medical-bot
+- **Service**: medical-bot (europe-west1)
+- **Service Account**: application-service-account@openai-experiments-373016.iam.gserviceaccount.com
+- **Port**: 8080 (hardcoded for production)
+
+## Development & Debugging
+
+### Local Development
+```bash
+python app.py
+```
+- Web Interface: http://localhost:8080
+- API Documentation: http://localhost:8080/docs
+
+### GCP Logs Monitoring
+```bash
+# Check Cloud Run logs for medical-bot service
+gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="medical-bot"' --limit=50 --format="table(timestamp,severity,textPayload)" --project=openai-experiments-373016
+
+# Real-time log streaming
+gcloud logging tail 'resource.type="cloud_run_revision" AND resource.labels.service_name="medical-bot"' --project=openai-experiments-373016
+```
+
+**Log Contents:**
+- Agent consultation logs (multi-agent team operations)
+- OpenAI API calls and responses
+- Patient session management
+- Treatment recommendations in multiple languages
+
 ## Development Notes
 
 - All agents use OpenAI GPT-4o model
