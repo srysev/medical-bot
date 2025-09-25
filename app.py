@@ -3,7 +3,9 @@ import os
 import hashlib
 import secrets
 import logging
-from fastapi import FastAPI, Request, HTTPException
+import asyncio
+import time
+from fastapi import Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from pydantic import BaseModel
@@ -12,6 +14,9 @@ from agno.os.config import AgentOSConfig, ChatConfig
 
 # Import the medical agent
 from medical_agent_with_team import create_hausarzt_agent
+
+# --- Consultation Store ---
+consultation_store = {}  # run_id -> {status, result, timestamp}
 
 # --- Logging Setup ---
 logger = logging.getLogger(__name__)
@@ -64,7 +69,7 @@ def create_medical_app():
         config=agent_os_config
     )
 
-    return agent_os
+    return agent_os, hausarzt
 
 def main():
     """Main entry point for the medical consultation web application."""
@@ -75,16 +80,13 @@ def main():
     print("🔧 Tools: Medizinisches Team-Konsultationstool aktiviert")
     print("=" * 60)
 
-    # Create the application
-    agent_os = create_medical_app()
-
     print("🌐 Verfügbare Endpunkte:")
     print("- Web Interface: http://localhost:8080")
     print("- API Dokumentation: http://localhost:8080/docs")
     print("- Agent Interface: http://localhost:8080/agents")
     print("=" * 60)
 
-    # Start the server
+    # Start the server using the global agent_os
     agent_os.serve(
         app="app:app",
         host="0.0.0.0",
@@ -93,7 +95,7 @@ def main():
     )
 
 # Create the AgentOS and get FastAPI app
-agent_os = create_medical_app()
+agent_os, hausarzt_agent = create_medical_app()
 app = agent_os.get_app()
 
 # --- Auth Middleware ---
@@ -205,6 +207,100 @@ async def serve_frontend():
 async def serve_ui():
     """Alternative route for the medical consultation interface."""
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+# --- Background Processing Function ---
+async def continue_consultation_in_background(agent, run_response):
+    """Continue agent consultation in background after tool confirmation."""
+    try:
+        print(f"🔄 Background consultation started for run_id: {run_response.run_id}")
+
+        # Auto-confirm all tools requiring confirmation
+        for tool in run_response.tools_requiring_confirmation:
+            tool.confirmed = True
+            print(f"✅ Auto-confirmed tool: {tool.tool_name}")
+
+        # Continue agent run
+        final_response = await agent.acontinue_run(run_response=run_response)
+
+        # Store final result
+        consultation_store[run_response.run_id] = {
+            "status": "COMPLETED",
+            "result": final_response.content,
+            "timestamp": time.time()
+        }
+
+        print(f"✅ Background consultation completed for run_id: {run_response.run_id}")
+
+    except Exception as e:
+        print(f"❌ Background consultation failed: {e}")
+        consultation_store[run_response.run_id] = {
+            "status": "ERROR",
+            "result": f"Error: {str(e)}",
+            "timestamp": time.time()
+        }
+
+# --- API Endpoints for Consultation ---
+@app.post("/api/consultation")
+async def start_consultation(request: Request):
+    """Start medical consultation with pause detection for team consultation."""
+    try:
+        # Parse form data (same format as AgentOS)
+        form_data = await request.form()
+        message = str(form_data.get("message", "")).strip()
+        session_id = str(form_data.get("session_id", ""))
+        user_id = form_data.get("user_id")
+        user_id = str(user_id) if user_id else None
+
+        if not message:
+            raise HTTPException(status_code=400, detail="Message is required")
+
+        print(f"🤖 Starting consultation: message='{message[:50]}...', session_id='{session_id}'")
+
+        # Run agent (will pause at tools requiring confirmation)
+        run_response = hausarzt_agent.run(
+            message,
+            session_id=session_id,
+            user_id=user_id
+        )
+
+        print(f"🔍 Agent run completed. is_paused: {getattr(run_response, 'is_paused', 'NO_ATTRIBUTE')}")
+
+        if hasattr(run_response, 'is_paused') and run_response.is_paused:
+            print(f"🚨 Agent paused - starting background consultation for run_id: {run_response.run_id}")
+
+            # Store initial running state
+            consultation_store[run_response.run_id] = {
+                "status": "RUNNING",
+                "result": None,
+                "timestamp": time.time()
+            }
+
+            # Start background task
+            asyncio.create_task(continue_consultation_in_background(
+                hausarzt_agent, run_response
+            ))
+
+            # Return immediately with code word
+            return {"status": "TEAM_CONSULTATION_STARTED", "run_id": run_response.run_id}
+
+        else:
+            # Direct response (no tool call requiring confirmation)
+            print("➡️ Direct response (no team consultation needed)")
+            return {"status": "COMPLETED", "result": run_response.content}
+
+    except Exception as e:
+        print(f"❌ Error in consultation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/consultation/{run_id}/status")
+async def get_consultation_status(run_id: str):
+    """Get status of ongoing consultation for polling."""
+    consultation = consultation_store.get(run_id)
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consultation not found")
+
+    print(f"📊 Status check for run_id {run_id}: {consultation['status']}")
+    return consultation
 
 if __name__ == "__main__":
     main()

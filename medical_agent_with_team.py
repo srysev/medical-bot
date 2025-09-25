@@ -204,7 +204,8 @@ team_session_id = None
     description="Consult a specialized medical team for comprehensive patient analysis including triage assessment, clinical evaluation, differential diagnosis, recommended investigations, and evidence-based treatment plans. Use this tool when you need expert medical analysis for patient symptoms.",
     show_result=True,
     cache_results=True,
-    cache_ttl=1800  # 30 minutes cache for medical consultations
+    cache_ttl=1800,  # 30 minutes cache for medical consultations
+    requires_confirmation=True  # Agent pauses for background processing
 )
 def consult_medical_team(patient_summary: str) -> str:
     """

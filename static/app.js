@@ -229,7 +229,7 @@ function detectLanguage() {
     }
 
     // Check browser language
-    const browserLang = navigator.language.substr(0, 2);
+    const browserLang = navigator.language.substring(0, 2);
     if (translations[browserLang]) {
         return browserLang;
     }
@@ -627,41 +627,125 @@ $form.addEventListener("submit", async (e) => {
         // Log session usage for medical consultation
         console.log(`${translations[currentLang].consoleMessage}: ${sessionId}`);
 
-        // Use the known agent ID for Dr. Hausarzt
-        const agentId = "dr.-hausarzt";
-
-        // Make the run request to the specific agent using FormData (as required by AgentOS)
+        // Use new consultation API
         const formData = new FormData();
         formData.append("message", text);
         formData.append("session_id", sessionId);
-        formData.append("stream", "false");
 
         // Add user_id for personalization and memory functionality
         if (currentUserName) {
             formData.append("user_id", currentUserName);
         }
 
-        const runRes = await fetch(`/agents/${agentId}/runs`, {
+        const consultationRes = await fetch(`/api/consultation`, {
             method: "POST",
             body: formData
         });
 
-        if (!runRes.ok) {
-            throw new Error(`HTTP ${runRes.status}`);
+        if (!consultationRes.ok) {
+            throw new Error(`HTTP ${consultationRes.status}`);
         }
 
-        const data = await runRes.json();
-        const responseText = data?.content || data?.message || data?.response || JSON.stringify(data);
-        bubble(responseText, "bot", { markdown: true });
+        const data = await consultationRes.json();
+
+        // Check for team consultation code word
+        if (data.status === "TEAM_CONSULTATION_STARTED") {
+            console.log(`🤖 Team consultation started, run_id: ${data.run_id}`);
+
+            // Show team consultation message based on language
+            const teamMessage = currentLang === 'de'
+                ? "🔄 Medizinisches Team wird konsultiert..."
+                : "🔄 Медицинская команда консультируется...";
+            bubble(teamMessage, "bot");
+
+            // Start polling for results
+            startConsultationPolling(data.run_id);
+        } else if (data.status === "COMPLETED") {
+            // Direct response (no team consultation needed)
+            const responseText = data.result || "Response received.";
+            bubble(responseText, "bot", { markdown: true });
+            setLoading(false);
+        } else {
+            throw new Error(`Unexpected response status: ${data.status}`);
+        }
 
     } catch (err) {
         console.error("Medical consultation error:", err);
         bubble(translations[currentLang].errorMessage, "bot");
-    } finally {
         setLoading(false);
         $input.focus();
     }
 });
+
+// Polling system for team consultations
+let consultationPollingInterval = null;
+
+function startConsultationPolling(runId) {
+    console.log(`📊 Starting polling for run_id: ${runId}`);
+
+    const maxDuration = 5 * 60 * 1000; // 5 minutes max
+    const pollInterval = 10 * 1000; // 10 seconds
+    const startTime = Date.now();
+
+    consultationPollingInterval = setInterval(async () => {
+        try {
+            // Check for timeout
+            if (Date.now() - startTime > maxDuration) {
+                console.log("⏱️ Polling timeout reached");
+                clearInterval(consultationPollingInterval);
+
+                const timeoutMessage = currentLang === 'de'
+                    ? "⏱️ Team-Konsultation dauert länger als erwartet. Bitte versuchen Sie es erneut."
+                    : "⏱️ Консультация команды занимает больше времени, чем ожидалось. Попробуйте еще раз.";
+                bubble(timeoutMessage, "bot");
+
+                setLoading(false);
+                $input.focus();
+                return;
+            }
+
+            // Poll for status
+            const statusRes = await fetch(`/api/consultation/${runId}/status`);
+
+            if (!statusRes.ok) {
+                throw new Error(`HTTP ${statusRes.status}`);
+            }
+
+            const statusData = await statusRes.json();
+            console.log(`📊 Polling status: ${statusData.status}`);
+
+            if (statusData.status === "COMPLETED") {
+                // Team consultation completed
+                clearInterval(consultationPollingInterval);
+
+                const resultText = statusData.result || "Team consultation completed.";
+                bubble(resultText, "bot", { markdown: true });
+
+                setLoading(false);
+                $input.focus();
+
+            } else if (statusData.status === "ERROR") {
+                // Team consultation failed
+                clearInterval(consultationPollingInterval);
+
+                const errorText = statusData.result || "Team consultation failed.";
+                bubble(errorText, "bot");
+
+                setLoading(false);
+                $input.focus();
+            }
+            // If status is still "RUNNING", continue polling
+
+        } catch (err) {
+            console.error("Polling error:", err);
+            clearInterval(consultationPollingInterval);
+
+            bubble(translations[currentLang].errorMessage, "bot");
+            setLoading(false);
+            $input.focus();
+        }
+    }, pollInterval);
+}
 
 // Initialize language and focus input on page load
 document.addEventListener("DOMContentLoaded", () => {
