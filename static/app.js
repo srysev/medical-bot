@@ -45,7 +45,10 @@ const translations = {
         doctorLabel: "Dr. Hausarzt",
         backButton: "← Zurück",
         noMessages: "Keine Nachrichten",
-        atTime: "um"
+        atTime: "um",
+        teamConsultation: "🔄 Medizinisches Team wird konsultiert...",
+        consultationWarning: "⏳ Die Team-Konsultation kann bis zu 10 Minuten dauern. Bitte schließen Sie den Browser nicht.",
+        consultationTimeout: "❌ Etwas ist schiefgelaufen. Diese Konversation ist beendet. Laden Sie die Seite neu und versuchen Sie es erneut."
     },
     ru: {
         title: "Медицинская консультация - Доктор Хаусарцт",
@@ -85,7 +88,10 @@ const translations = {
         doctorLabel: "Доктор Хаусарцт",
         backButton: "← Назад",
         noMessages: "Нет сообщений",
-        atTime: "в"
+        atTime: "в",
+        teamConsultation: "🔄 Медицинская команда консультируется...",
+        consultationWarning: "⏳ Консультация команды может занять до 10 минут. Пожалуйста, не закрывайте браузер.",
+        consultationTimeout: "❌ Что-то пошло не так. Эта беседа завершена. Обновите страницу и попробуйте еще раз."
     }
 };
 
@@ -652,11 +658,11 @@ $form.addEventListener("submit", async (e) => {
         if (data.status === "TEAM_CONSULTATION_STARTED") {
             console.log(`🤖 Team consultation started, run_id: ${data.run_id}`);
 
-            // Show team consultation message based on language
-            const teamMessage = currentLang === 'de'
-                ? "🔄 Medizinisches Team wird konsultiert..."
-                : "🔄 Медицинская команда консультируется...";
-            bubble(teamMessage, "bot");
+            // Show team consultation message
+            bubble(translations[currentLang].teamConsultation, "bot");
+
+            // Show consultation warning
+            bubble(translations[currentLang].consultationWarning, "bot");
 
             // Start polling for results
             startConsultationPolling(data.run_id);
@@ -683,9 +689,10 @@ let consultationPollingInterval = null;
 function startConsultationPolling(runId) {
     console.log(`📊 Starting polling for run_id: ${runId}`);
 
-    const maxDuration = 5 * 60 * 1000; // 5 minutes max
+    const maxDuration = 10 * 60 * 1000; // 10 minutes max
     const pollInterval = 10 * 1000; // 10 seconds
     const startTime = Date.now();
+
 
     consultationPollingInterval = setInterval(async () => {
         try {
@@ -693,11 +700,8 @@ function startConsultationPolling(runId) {
             if (Date.now() - startTime > maxDuration) {
                 console.log("⏱️ Polling timeout reached");
                 clearInterval(consultationPollingInterval);
-
-                const timeoutMessage = currentLang === 'de'
-                    ? "⏱️ Team-Konsultation dauert länger als erwartet. Bitte versuchen Sie es erneut."
-                    : "⏱️ Консультация команды занимает больше времени, чем ожидалось. Попробуйте еще раз.";
-                bubble(timeoutMessage, "bot");
+                
+                bubble(translations[currentLang].consultationTimeout, "bot");
 
                 setLoading(false);
                 $input.focus();
@@ -717,7 +721,7 @@ function startConsultationPolling(runId) {
             if (statusData.status === "COMPLETED") {
                 // Team consultation completed
                 clearInterval(consultationPollingInterval);
-
+                
                 const resultText = statusData.result || "Team consultation completed.";
                 bubble(resultText, "bot", { markdown: true });
 
@@ -727,7 +731,7 @@ function startConsultationPolling(runId) {
             } else if (statusData.status === "ERROR") {
                 // Team consultation failed
                 clearInterval(consultationPollingInterval);
-
+                
                 const errorText = statusData.result || "Team consultation failed.";
                 bubble(errorText, "bot");
 
@@ -739,7 +743,7 @@ function startConsultationPolling(runId) {
         } catch (err) {
             console.error("Polling error:", err);
             clearInterval(consultationPollingInterval);
-
+            
             bubble(translations[currentLang].errorMessage, "bot");
             setLoading(false);
             $input.focus();
